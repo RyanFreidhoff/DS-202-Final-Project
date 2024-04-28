@@ -6,16 +6,24 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+/-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Title: Spotify Data Final Project
 Group: Jonah Landas, Ryan Freidhoff
 Data: Data is from a playlist I have made on Spotify. The data contains year each song was produced, duration, artist name, album name, song name, if it is a one-hit-wonder (Y/N), popularity rating, type of release, and genre.
 Questions: Can we profile the playlist to see exactly what the typical song looks like? What are the strongest correlations within these songs, and what exactly is the backbone of a playlist?
 
+/-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+We will begin by loading in the .csv file. The chunk of code below reads the .csv file and creates
+the dataframe 'spotify' that we will be using throughout this project.
+
 ```{r}
   library(rvest)
 
-  spotify <- read_csv("DS 202 Final Project - Data(Sheet1).csv")
+  csv <- read.csv("DS 202 Final Project - Data(Sheet1).csv")
+  spotify <- as.data.frame(csv)
   head(spotify)
 ```
 
@@ -26,26 +34,43 @@ this new column `PlaysListenerRatio`.
 
 ```{r}
   library(dplyr)
+  library(tidyr)
 
-  spotify$PlaysListenerRatio <- (spotify$Plays / spotify$`Monthly Listeners`)
-  spotify
+  spotify$Plays.Listener.Ratio <- spotify$Plays / spotify$`Monthly.Listeners`
 ```
-
 
 ```{r}
   library(ggplot2)
   
-  avgMonthlyListeners <- mean(spotify$`Monthly Listeners`)
+  avgMonthlyListeners <- mean(spotify$`Monthly.Listeners`)
   #avgMonthlyListeners
   
-  avgRatio <- mean(spotify$PlaysListenerRatio)
+  avgRatio <- mean(spotify$Plays.Listener.Ratio)
   avgRatio
+    
+  plot1 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
+  geom_point() 
   
-  ggplot(data = spotify, aes(x = PlaysListenerRatio, y = `Monthly Listeners`)) +
+  plot2 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
+  geom_point() +
+    geom_hline(aes(yintercept = avgMonthlyListeners)) +
+    geom_vline(aes(xintercept = avgRatio))
+  
+  plot3 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
   geom_point() +
     geom_hline(aes(yintercept = avgMonthlyListeners)) +
     geom_vline(aes(xintercept = avgRatio)) +
     geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
               method.args=list(start=c(a=1, k=1)))
   
+  plot4 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`, color = `One.Hit.Wonder..Y.N.`)) +
+  geom_point() +
+    geom_hline(aes(yintercept = avgMonthlyListeners)) +
+    geom_vline(aes(xintercept = avgRatio)) +
+    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
+              method.args=list(start=c(a=1, k=1)))
+  plot1
+  plot2
+  plot3
+  plot4
 ```
