@@ -21,10 +21,12 @@ the dataframe 'spotify' that we will be using throughout this project.
 
 ```{r}
   library(rvest)
+  library(lubridate)
 
   csv <- read.csv("DS 202 Final Project - Data(Sheet1).csv")
   spotify <- as.data.frame(csv)
-  head(spotify)
+  spotify$`Release.Date` <- lubridate::mdy(spotify$`Release.Date`)
+  show(spotify)
 ```
 
 The first piece of investigation will be to dive into the number of plays each song has compared
