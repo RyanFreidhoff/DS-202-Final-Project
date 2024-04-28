@@ -18,3 +18,15 @@ Questions: Can we profile the playlist to see exactly what the typical song look
   spotify <- read_csv("DS 202 Final Project - Data(Sheet1).csv")
   head(spotify)
 ```
+
+The first piece of investigation will be to dive into the number of plays each song has compared
+to the number of monthly listeners the main artist has. We will add a column that gives the ratio
+between the number of plays and the number of monthly listeners in the chunk below. We will name
+this new column `PlaysListenerRatio`.
+
+```{r}
+  library(dplyr)
+
+  spotify$PlaysListenerRatio <- (spotify$Plays / spotify$`Monthly Listeners`)
+  spotify
+```
