@@ -30,3 +30,22 @@ this new column `PlaysListenerRatio`.
   spotify$PlaysListenerRatio <- (spotify$Plays / spotify$`Monthly Listeners`)
   spotify
 ```
+
+
+```{r}
+  library(ggplot2)
+  
+  avgMonthlyListeners <- mean(spotify$`Monthly Listeners`)
+  #avgMonthlyListeners
+  
+  avgRatio <- mean(spotify$PlaysListenerRatio)
+  avgRatio
+  
+  ggplot(data = spotify, aes(x = PlaysListenerRatio, y = `Monthly Listeners`)) +
+  geom_point() +
+    geom_hline(aes(yintercept = avgMonthlyListeners)) +
+    geom_vline(aes(xintercept = avgRatio)) +
+    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
+              method.args=list(start=c(a=1, k=1)))
+  
+```
