@@ -16,23 +16,24 @@ Questions: Can we profile the playlist to see exactly what the typical song look
 
 
 
-We will begin by loading in the .csv file. The chunk of code below reads the .csv file and creates
-the dataframe 'spotify' that we will be using throughout this project.
+We will begin by loading in the .csv file. The chunk of code below reads the .csv file and creates the dataframe 'spotify' that we will be using throughout this project. Additionally, the column `Release.Date` is turned into type date and the `Duration` column is also transformed into minutes and seconds using lubridate.
 
 ```{r}
   library(rvest)
   library(lubridate)
+  library(hms)
 
   csv <- read.csv("DS 202 Final Project - Data(Sheet1).csv")
   spotify <- as.data.frame(csv)
   spotify$`Release.Date` <- lubridate::mdy(spotify$`Release.Date`)
-  show(spotify)
+  spotify$Duration <- lubridate::ms(spotify$Duration)
+  head(spotify)
 ```
 
 The first piece of investigation will be to dive into the number of plays each song has compared
 to the number of monthly listeners the main artist has. We will add a column that gives the ratio
 between the number of plays and the number of monthly listeners in the chunk below. We will name
-this new column `PlaysListenerRatio`.
+this new column `Plays.Listener.Ratio`.
 
 ```{r}
   library(dplyr)
@@ -48,31 +49,118 @@ this new column `PlaysListenerRatio`.
   #avgMonthlyListeners
   
   avgRatio <- mean(spotify$Plays.Listener.Ratio)
-  avgRatio
-    
+  #avgRatio
+  
+  weezer <- subset(spotify, `Artist` =="Weezer")
+  
   plot1 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
   geom_point() 
   
   plot2 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
   geom_point() +
     geom_hline(aes(yintercept = avgMonthlyListeners)) +
-    geom_vline(aes(xintercept = avgRatio))
+    geom_vline(aes(xintercept = avgRatio)) +
+    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
+    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90)) +
+    annotate("text", x = 92, y = 13000000, label = "Island In The Sun", color = "Blue") +
+    geom_point(data=weezer, color="blue")
   
   plot3 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
   geom_point() +
     geom_hline(aes(yintercept = avgMonthlyListeners)) +
     geom_vline(aes(xintercept = avgRatio)) +
     geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
-              method.args=list(start=c(a=1, k=1)))
+              method.args=list(start=c(a=1, k=1))) +
+    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
+    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90))
   
   plot4 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`, color = `One.Hit.Wonder..Y.N.`)) +
   geom_point() +
     geom_hline(aes(yintercept = avgMonthlyListeners)) +
     geom_vline(aes(xintercept = avgRatio)) +
     geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
+              method.args=list(start=c(a=1, k=1))) +
+    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
+    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90))
+  
+  plot5 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`, color = `Type.of.Release`)) +
+  geom_point() +
+    geom_hline(aes(yintercept = avgMonthlyListeners)) +
+    geom_vline(aes(xintercept = avgRatio)) +
+    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
+    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90)) +
+    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
               method.args=list(start=c(a=1, k=1)))
+  
   plot1
   plot2
   plot3
   plot4
+  plot5
 ```
+
+```{r}
+  #We can now investigate whether the release date is correlated with the number of plays
+  ggplot(data = spotify, aes(x = `Release.Date`, y = `Plays`)) +
+    geom_point()
+```
+From the above scatter plot, we see that there is not a correlation between the number of plays and the release date. We will now look into when most of the songs were released, and if there are any calendar dates that have more releases than others.
+
+```{r}
+  library(modeest)
+  library(lubridate)
+
+  summary(spotify$Release.Date)
+  #The summary shows us that the average release date and the median release date are both in 2017 which agrees with the above scatter plot. The oldest song on this playlist is from 2001 and the most recent is from late 2020.
+  mlv(month(spotify$Release.Date), method = "mfv")
+  mlv(wday(spotify$Release.Date), method = "mfv")
+  summary(spotify$Duration) #Shows the average duration of all songs
+```
+
+Based on the above code chunk, we can see that songs on this playlist are most likely to be produces in February, and the most often day of the week that the songs are released is Friday.
+
+```{r}
+  library(corrplot)
+  library(lubridate)
+
+  spotifyWork <- spotify
+  spotifyWork$Seconds <- as.integer(seconds(spotifyWork$Duration))
+  spotifyWork$Year <- as.integer(year(spotifyWork$Release.Date))
+  spotifyNumeric <- spotifyWork[c(1, 9, 10, 11, 12, 13)]
+  
+  head(spotifyNumeric)
+  cor_data = cor(spotifyNumeric)
+  corrplot(cor_data)
+```
+
+The above code chunk shows how we were able to create a correlation matrix of the data. We had to first isolate only the numeric columns of the data. We called this new data frame `spotifyNumeric`. We then created the actual matrix using the corrplot package. A few things to note from the matrix are that the `Plays` and `Plays.Listener.Ratio` columns are completely uncorrelated. The most positively correlated columns are the `Plays` and the `Monthly.Listeners` columns. The most negatively correlated columns are the `Plays.Listeners.Ratio` and `Monthly.Listeners` columns.
+
+```{r}
+  library(tidyverse)
+  library(tidyr)
+
+  #unique(spotify$Artist)
+  spotify2 <- separate(data = spotify, col = `Artist`, into = c("Artist1", "Artist2", "Artist3", "Artist4"), sep= ",")
+  pivoted <- spotify2 %>% pivot_longer(cols = c("Artist1", "Artist2", "Artist3", "Artist4"), 
+                                      names_to = "Column Number", values_to = "Artist Name")
+  #pivoted
+  artistCount <- pivoted %>% count(`Artist Name`, sort= TRUE)
+  head(artistCount)
+  #spotify2
+```
+
+```{r}
+  popularSongs <- spotify[order(spotify$Plays, decreasing = TRUE),]
+  head(popularSongs)
+```
+
+
+
+Issues Along the Way:
+Obtaining the data required a few hours of time due to the data set being custom. The solution was to be persistent and change some of the columns originally planned on being in the data set.
+
+read_csv was being used originally and was working. Halfway through analysis, errors were thrown regarding read_csv() being an unknown function. The solution was using read.csv() instead and then updating the column names.
+
+Date Released column format in .csv file was not compatible with lubridate. The solution was reformatting the excel worksheet to a different display of the dates and updating the .csv file version.
+
+Some of the artists had characters that are not allowed in r in their name. The solution was to alter the name in the .csv file.
