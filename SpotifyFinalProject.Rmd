@@ -1,6 +1,8 @@
 ---
 title: "Spotify_Final_Project"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -39,72 +41,113 @@ this new column `Plays.Listener.Ratio`.
   library(dplyr)
   library(tidyr)
 
+  #This ratio of the plays by the monthly listeners (fan base) helps us normalize the values
   spotify$Plays.Listener.Ratio <- spotify$Plays / spotify$`Monthly.Listeners`
+  
+  #avgMonthlyListeners will be used later in some of the graphing
+  avgMonthlyListeners <- mean(spotify$`Monthly.Listeners`)
+  #avgMonthlyListeners
+  
+  #avgRatio will be used later for some of the graphing
+  avgRatio <- mean(spotify$Plays.Listener.Ratio)
+  #avgRatio
+  
+  #avgPlays will be used later for some of the graphing
+  avgPlays <- mean(spotify$Plays)
+  #avgPlays
 ```
 
 ```{r}
   library(ggplot2)
   
-  avgMonthlyListeners <- mean(spotify$`Monthly.Listeners`)
-  #avgMonthlyListeners
-  
-  avgRatio <- mean(spotify$Plays.Listener.Ratio)
-  #avgRatio
-  
-  weezer <- subset(spotify, `Artist` =="Weezer")
-  
-  plot1 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
+  #This is our initial visualization of the plays by the monthly listeners in the form of a scatter plot
+  plot1 <- ggplot(data = spotify, aes(x = `Plays`, y = `Monthly.Listeners`)) +
   geom_point() 
   
-  plot2 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
-  geom_point() +
-    geom_hline(aes(yintercept = avgMonthlyListeners)) +
-    geom_vline(aes(xintercept = avgRatio)) +
-    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
-    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90)) +
-    annotate("text", x = 92, y = 13000000, label = "Island In The Sun", color = "Blue") +
-    geom_point(data=weezer, color="blue")
-  
-  plot3 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`)) +
-  geom_point() +
-    geom_hline(aes(yintercept = avgMonthlyListeners)) +
-    geom_vline(aes(xintercept = avgRatio)) +
-    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
-              method.args=list(start=c(a=1, k=1))) +
-    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
-    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90))
-  
-  plot4 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`, color = `One.Hit.Wonder..Y.N.`)) +
-  geom_point() +
-    geom_hline(aes(yintercept = avgMonthlyListeners)) +
-    geom_vline(aes(xintercept = avgRatio)) +
-    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
-              method.args=list(start=c(a=1, k=1))) +
-    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
-    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90))
-  
-  plot5 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio, y = `Monthly.Listeners`, color = `Type.of.Release`)) +
-  geom_point() +
-    geom_hline(aes(yintercept = avgMonthlyListeners)) +
-    geom_vline(aes(xintercept = avgRatio)) +
-    geom_text(aes(200, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
-    geom_text(aes(x= avgRatio, y=4e7,label = "x = 51.50869", vjust = 1.5, angle = 90)) +
-    geom_smooth(method="nls", se=FALSE, formula=y~a*log(x)+k,
-              method.args=list(start=c(a=1, k=1)))
-  
   plot1
-  plot2
-  plot3
-  plot4
-  plot5
 ```
 
 ```{r}
+  library(ggplot2)
+
+  #Our second layer of visualization adds the avgPlays and avgMonthlyListeners to the graph
+  plot2 <- ggplot(data = spotify, aes(x = `Plays`, y = `Monthly.Listeners`)) +
+  geom_point() +
+    geom_hline(aes(yintercept = avgMonthlyListeners)) +
+    geom_vline(aes(xintercept = avgPlays)) +
+    geom_text(aes(5e8, y= avgMonthlyListeners,label = "y = 15,281,061", vjust = -0.5)) +
+    geom_text(aes(x= avgPlays, y=4e7,label = "x = 235,524,797", vjust = 1.5, angle = 90))
+  
+  plot2
+```
+
+```{r}
+  library(ggplot2)
+
+  #We now use the normalized ratio calculated early to see the typical tatio of plays to fan base in this histogram
+  plot3 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio)) +
+    geom_histogram()
+
+  plot3
+```
+
+```{r}
+  library(ggplot2)
+
+  #We are now coloring the histogram based on the categorical variable of whether it is a one hit wonder
+  plot4 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio,fill= `One.Hit.Wonder..Y.N.`, color= `One.Hit.Wonder..Y.N.`)) +
+    geom_histogram(binwidth = 3)
+  
+  plot4
+```
+
+
+```{r}
+  library(ggplot2)
+
+  #We now add the get_density function to see the relative density of each ratio in terms of one hit wonder column
+  plot5 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio,y= after_stat(density) ,fill= `One.Hit.Wonder..Y.N.`, color= `One.Hit.Wonder..Y.N.`)) +
+  geom_histogram(binwidth = 3) +
+  geom_density(alpha=.5, fill= "black")
+  
+  plot5
+```
+
+From the above graph, we can see that not only do one hit wonders have a much larger average plays to monthly listeners ratio, but the range is also far greater for the one hit wonder songs than the tight spread of the songs that are not one hit wonders.
+
+
+```{r}
+  library(ggplot2)
+
+  #We now add the get_density function to see the relative density of each ratio in terms of release type column
+  plot6 <- ggplot(data = spotify, aes(x = Plays.Listener.Ratio,y= after_stat(density) ,fill= `Type.of.Release`, color= `Type.of.Release`)) +
+  geom_histogram(binwidth = 15) +
+  geom_density(alpha=0.5, fill="black")
+  
+  plot6
+```
+
+The above graph shows how the relative density of plays to monthly listeners ratio differs based on the type of release of the song. We can see that although there are fewer singles than albums, the overlay that shows a smooth function of the relative density shows that the singles and albums are nearly identical in terms of the plays to fan base ratio. Additionally, the songs released on EPs are mainly evenly accross a ratio less than 1 all the way to about 150. This is most likely due to the wide variety of artists that use EPs to release songs at a cheaper production cost.
+
+```{r}
+  library(ggplot2)
+
   #We can now investigate whether the release date is correlated with the number of plays
   ggplot(data = spotify, aes(x = `Release.Date`, y = `Plays`)) +
     geom_point()
 ```
 From the above scatter plot, we see that there is not a correlation between the number of plays and the release date. We will now look into when most of the songs were released, and if there are any calendar dates that have more releases than others.
+
+```{r}
+  library(ggplot2)
+
+  #We can now investigate whether the release date is correlated with the number of plays
+  ggplot(data = spotify, aes(x = `Plays.Listener.Ratio`, y = `Duration`)) +
+    geom_point()
+```
+
+The above graph shows the relationship between the plays listener ratio and the song duration in seconds. We can see a very slight positive correlation between the two variables. The relationship also appears slightly linear in nature, with one major outlier in the y direction.
+
 
 ```{r}
   library(modeest)
@@ -150,11 +193,11 @@ The above code chunk shows how we were able to create a correlation matrix of th
 ```
 
 ```{r}
+
+  #This shows the most played songs
   popularSongs <- spotify[order(spotify$Plays, decreasing = TRUE),]
   head(popularSongs)
 ```
-
-
 
 Issues Along the Way:
 Obtaining the data required a few hours of time due to the data set being custom. The solution was to be persistent and change some of the columns originally planned on being in the data set.
@@ -164,3 +207,8 @@ read_csv was being used originally and was working. Halfway through analysis, er
 Date Released column format in .csv file was not compatible with lubridate. The solution was reformatting the excel worksheet to a different display of the dates and updating the .csv file version.
 
 Some of the artists had characters that are not allowed in r in their name. The solution was to alter the name in the .csv file.
+
+
+
+Conclusion: Based on the above analysis, we can see that the typical song in this playlist is 3:23 in duration, released on a Friday and most likely released in 2017. Additionally, we have that the most prevalent artists in this playlist are blackbear (9 songs), Mac Miller (6 songs), Aminé (4 songs), Drake (3 songs) and Kota the Friend (3 songs). The top 5 songs in terms of Spotify plays are "Redbone", "Daddy Issues", "Falling Down - Bonus Track", "What You Know Bout Love", "Give Me Everything (feat. Nayer)" and "Laugh Now Cry Later (feat. Lil Durk)". Overall, R&B was the most popular genre by far. We hypothesize that these findings are highly personalized as this playlist was all custom and actually took hours to originally create. We believe that each playlist creator will have a unique 'playlist profile' accentuated by the histograms containing the plays by monthly listeners ratio. We also firmly believe that the amount of time spent creating the playlist has a strong correlation with how personalized the fore mentioned 'playlist profile' is.
+
